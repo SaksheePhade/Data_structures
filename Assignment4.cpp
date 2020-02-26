@@ -9,12 +9,13 @@
 #include <iostream>
 #include <stack>
 using namespace std;
-
 template <class T>
-struct Tnode {
+class Tnode {
 	T data;
 	Tnode *left;
 	Tnode *right;
+	template <class b>
+	friend class ExpTree;
 };
 
 template <class T>
