@@ -19,7 +19,7 @@ class Vertex;
 		Vertex *startVertex;
 		int weight;
 		bool edgeInTree;
-		friend class graphPICT;
+		friend class graphKruskals;
 		
 		public:
 			Edge() {
@@ -36,7 +36,7 @@ class Vertex;
 		bool visited;
 		Edge *nextEdge;
 		Vertex *nextVertex;
-		friend class graphPICT;
+		friend class graphKruskals;
 		bool vertexInTree;
 		public :
 			Vertex() {
@@ -51,17 +51,17 @@ class Vertex;
 		int count;
 		int numE;
 		Vertex *firstVertex;
-		friend class graphPICT;
+		friend class graphKruskals;
 	};
 
-class graphPICT {
+class graphKruskals {
 
 	Head *G;
 	//graphEdge E;
 
 public:
-	graphPICT();
-	virtual ~graphPICT();
+	graphKruskals();
+	virtual ~graphKruskals();
 	void createGraph();
 	int insertVertex(string, int);
 	void insertEdge(string, string, int, int);
@@ -69,25 +69,25 @@ public:
 	Vertex *getGraphHead();
 	void clear();
 	void Kruskals();
-	int minEdge();
+	int minEdge(graphKruskals);
 	void edgeKruskals(Vertex*, Vertex*);
 	Edge *DFS(Vertex*,int);
-	Edge *search(int);
+	Edge *search(int, graphKruskals);
 	int numEdges();
 	int cycle(Vertex*, Vertex*);
 	//other program related functions
 };
 
-graphPICT::graphPICT() {
+graphKruskals::graphKruskals() {
 	// TODO Auto-generated constructor stub
 	G=NULL;
 }
 
-graphPICT::~graphPICT() {
+graphKruskals::~graphKruskals() {
 	// TODO Auto-generated destructor stub
 }
 
-void graphPICT :: createGraph()
+void graphKruskals :: createGraph()
 {
 	G=new Head;
 	G->count=0;
@@ -95,27 +95,34 @@ void graphPICT :: createGraph()
 	G->firstVertex = NULL; //graph head is created
 }
 
-void graphPICT :: clear()
+void graphKruskals :: clear()
 {
 	Edge *edge;
 	Vertex *curr = G->firstVertex;
 	while(curr!=NULL) {
 		curr->visited = false;
+		curr->vertexInTree = false;
+		edge = curr->nextEdge;
+		while(edge!=NULL) {
+			edge->edgeInTree=false;
+			edge = edge->nextEdge;
+		}
+		curr = curr->nextVertex;
 	}
+	
 }
 
-Vertex* graphPICT :: getGraphHead()
+Vertex* graphKruskals :: getGraphHead()
 {
 	return G->firstVertex;
 }
 
-int graphPICT :: numEdges()
+int graphKruskals :: numEdges()
 {
-	cout << "\n\tnumE : " << G->numE;
 	return G->numE;
 }
 
-int graphPICT :: insertVertex(string name, int tree)
+int graphKruskals :: insertVertex(string name, int tree)
 {
 	Vertex *newVertex,*curr;
 	newVertex = new Vertex;
@@ -138,17 +145,32 @@ int graphPICT :: insertVertex(string name, int tree)
 	return G->count;
 }
 
-int graphPICT :: cycle(Vertex *v1, Vertex *v2)//Checks if cycle is formed 
+int graphKruskals :: cycle(Vertex *v1, Vertex *v2)//Checks if cycle is formed 
 {
 	Edge *e1 = v1->nextEdge;
 	Vertex *temp;
 	Edge *curr;
+	if(G->firstVertex==NULL) return 0;
+	
+	//to check mirror edge
+	temp = G->firstVertex;
+	while(temp!=NULL) {
+		curr=temp->nextEdge;
+		while(curr!=NULL) {
+			if(curr->edgeInTree) {
+				if(curr->startVertex->place==v2->place && curr->destinationVertex->place==v1->place) return 1;
+			}
+		curr = curr->nextEdge;
+		}
+		temp = temp->nextVertex;
+	}
+	
 	while(e1!=NULL) {//traverses the edges of both vertices which are already present in the tree
 		temp = e1->startVertex;
-		if(temp==v2) return 1;
+		if(temp==v2 && e1->edgeInTree) return 1;
 		curr = temp->nextEdge;
 		while(curr!=NULL) {
-			if(curr->destinationVertex==v2) return 1;
+			if(curr->destinationVertex==v2 && curr->edgeInTree) return 1;//if any of the edges form a cycle
 			curr = curr->nextEdge;
 		}
 		e1 = e1->nextEdge;
@@ -156,7 +178,7 @@ int graphPICT :: cycle(Vertex *v1, Vertex *v2)//Checks if cycle is formed
 	return 0;
 }
 
-int graphPICT :: minEdge()//finds the minimum weight of the available edges
+int graphKruskals :: minEdge(graphKruskals spTree)//finds the minimum weight of the available edges
 {
 	Vertex *curr=G->firstVertex;
 	Edge *e;
@@ -167,15 +189,17 @@ int graphPICT :: minEdge()//finds the minimum weight of the available edges
 			while(e!=NULL) {
 				if(min>e->weight) {
 					if(e->edgeInTree==false) {
-						if(!(e->startVertex->vertexInTree==false||e->destinationVertex->vertexInTree==false)) {
-							if(!cycle(e->startVertex, e->destinationVertex)) min = e->weight;
+						if(!(e->startVertex->vertexInTree==false||e->destinationVertex->vertexInTree==false)) {//if both vertices present
+							if(!spTree.cycle(e->startVertex, e->destinationVertex)) {//check for cycle
+								min = e->weight;
+							}
 						}
 						else {
 							min = e->weight;
-						} 
+						}
+						 
 					}//ensures cycle is not formed
-				}
-				if(e->nextEdge==NULL) break;
+				} 
 				e = e->nextEdge;
 			}
 			curr = curr->nextVertex;  
@@ -184,7 +208,7 @@ int graphPICT :: minEdge()//finds the minimum weight of the available edges
 	return min;
 }
 
-void graphPICT :: insertEdge(string place1, string place2, int d, int tree)
+void graphKruskals :: insertEdge(string place1, string place2, int d, int tree)
 {
 	
 	Vertex *curr1,*curr2;
@@ -222,7 +246,7 @@ void graphPICT :: insertEdge(string place1, string place2, int d, int tree)
 			p1->startVertex = curr1;
 			G->numE++;
 		}
-		
+		if(tree==1) p1->edgeInTree=true;
 		if(tree==0) {
 			p2 = curr2->nextEdge;
 			if(p2==NULL) {
@@ -245,11 +269,10 @@ void graphPICT :: insertEdge(string place1, string place2, int d, int tree)
 				G->numE++;
 			}
 		}
-	}
-	if(tree==1) p1->edgeInTree = true; 
+	} 
 }
 
-void graphPICT :: displayGraph(int tree)
+void graphKruskals :: displayGraph(int tree)
 {
 	Vertex *vertexPtr = G->firstVertex;
 	Edge *edgePtr;
@@ -272,18 +295,17 @@ void graphPICT :: displayGraph(int tree)
 	//display the graph in adjacency list form
 }
 
-void graphPICT :: Kruskals()
+void graphKruskals :: Kruskals()
 {
 	int i=0;
 	Edge *min;
-	graphPICT spTree;
+	graphKruskals spTree;
 	Vertex *v1=NULL, *v2=NULL;
-
 	spTree.createGraph();
 	spTree.clear();
 	while(spTree.numEdges()!=(G->count-1)) {//while num of edges is not equal to vertices-1,
-		//min = DFS(G->firstVertex, minEdge());
-		min = search(minEdge());
+		//min = DFS(G->firstVertex, minEdge()); 
+		min = search(minEdge(spTree), spTree);
 		if(min!=NULL) {//if edge is not present in tree, then
 			v1 = min->startVertex;
 			v2 = min->destinationVertex;
@@ -293,6 +315,8 @@ void graphPICT :: Kruskals()
 					v1->vertexInTree = true;
 					v2->vertexInTree = true;
 					min->edgeInTree = true;
+					cout << "\n\tPASS WISE DISPLAY : ";
+					spTree.displayGraph(1);
 		}	
 	}
 	cout << "\n\t==========================================================" << endl;
@@ -302,7 +326,7 @@ void graphPICT :: Kruskals()
 	cout << "\n\t==========================================================" << endl;
 }
 
-Edge* graphPICT :: DFS(Vertex *vertex,int min) // searching using DFS algo
+Edge* graphKruskals :: DFS(Vertex *vertex,int min) // searching using DFS algo
 {
 	Edge *edgePtr=vertex->nextEdge;
 	while(edgePtr!=NULL) {
@@ -320,19 +344,19 @@ Edge* graphPICT :: DFS(Vertex *vertex,int min) // searching using DFS algo
 	return NULL;
 }
 
-Edge* graphPICT :: search(int min)
+Edge* graphKruskals :: search(int min, graphKruskals spTree)
 {
 	Edge *edgePtr;
 	Edge *result=NULL;
 	Vertex *vertexPtr = G->firstVertex;
-	
+
 	while(vertexPtr!=NULL) {
 		edgePtr = vertexPtr->nextEdge;
 		while(edgePtr!=NULL) {
-			if(edgePtr->weight==min) {
-				if(edgePtr->edgeInTree==false) {
-					if(!(edgePtr->startVertex->vertexInTree==false||edgePtr->destinationVertex->vertexInTree==false)) {
-						if(!cycle(edgePtr->startVertex, edgePtr->destinationVertex)) result = edgePtr; 
+			if(edgePtr->weight==min) { //if weight is equal to min,
+				if(edgePtr->edgeInTree==false) {//if the edge is absent in tree,
+					if(!(edgePtr->startVertex->vertexInTree==false||edgePtr->destinationVertex->vertexInTree==false)) {//both vertices present,
+						if(!spTree.cycle(edgePtr->startVertex, edgePtr->destinationVertex)) result = edgePtr;//cycle absent 
 					}
 					else {
 						result = edgePtr;	
@@ -354,7 +378,7 @@ int main()
 {
 	int choice,d;
 	char flag='n';
-	graphPICT U;
+	graphKruskals U;
 	string place1,place2, name;
 	U.createGraph();
 		do {
@@ -407,23 +431,27 @@ int main()
         (5)Exit.
         Enter your choice : 1
 
-        Enter name of the place : a
+        Enter name of the place : A
 
 Enter another place ? (y/n)y
 
-        Enter name of the place : b
+        Enter name of the place : B
 
 Enter another place ? (y/n)y
 
-        Enter name of the place : c
+        Enter name of the place : C
 
 Enter another place ? (y/n)y
 
-        Enter name of the place : d
+        Enter name of the place : D
 
 Enter another place ? (y/n)y
 
-        Enter name of the place : e
+        Enter name of the place : E
+
+Enter another place ? (y/n)y
+
+        Enter name of the place : F
 
 Enter another place ? (y/n)n
 
@@ -435,25 +463,11 @@ Enter another place ? (y/n)n
         (5)Exit.
         Enter your choice : 2
 
-        Enter place1 : a
+        Enter place1 : A
 
-        Enter place2 : b
+        Enter place2 : C
 
-        Enter distance between a and b : 5
-
-        MENU:
-        (1)Insert a place.
-        (2)Add edges and distances.
-        (3)Display graph.
-        (4)Kruskal's algorithm.
-        (5)Exit.
-        Enter your choice : 2
-
-        Enter place1 : a
-
-        Enter place2 : e
-
-        Enter distance between a and e : 1
+        Enter distance between A and C : 1
 
         MENU:
         (1)Insert a place.
@@ -463,25 +477,11 @@ Enter another place ? (y/n)n
         (5)Exit.
         Enter your choice : 2
 
-        Enter place1 : b
+        Enter place1 : D
 
-        Enter place2 : c
+        Enter place2 : F
 
-        Enter distance between b and c : 6
-
-        MENU:
-        (1)Insert a place.
-        (2)Add edges and distances.
-        (3)Display graph.
-        (4)Kruskal's algorithm.
-        (5)Exit.
-        Enter your choice : 2
-
-        Enter place1 : c
-
-        Enter place2 : d
-
-        Enter distance between c and d : 5
+        Enter distance between D and F : 2
 
         MENU:
         (1)Insert a place.
@@ -491,11 +491,109 @@ Enter another place ? (y/n)n
         (5)Exit.
         Enter your choice : 2
 
-        Enter place1 : c
+        Enter place1 : B
 
-        Enter place2 : e
+        Enter place2 : E
 
-        Enter distance between c and e : 3
+        Enter distance between B and E : 3
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : C
+
+        Enter place2 : F
+
+        Enter distance between C and F : 4
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : C
+
+        Enter place2 : D
+
+        Enter distance between C and D : 5
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : B
+
+        Enter place2 : C
+
+        Enter distance between B and C : 5
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : A
+
+        Enter place2 : D
+
+        Enter distance between A and D : 5
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : A
+
+        Enter place2 : B
+
+        Enter distance between A and B : 6
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : C
+
+        Enter place2 : E
+
+        Enter distance between C and E : 6
+
+        MENU:
+        (1)Insert a place.
+        (2)Add edges and distances.
+        (3)Display graph.
+        (4)Kruskal's algorithm.
+        (5)Exit.
+        Enter your choice : 2
+
+        Enter place1 : E
+
+        Enter place2 : F
+
+        Enter distance between E and F : 6
 
         MENU:
         (1)Insert a place.
@@ -511,11 +609,12 @@ Enter another place ? (y/n)n
 
         ==========================================================
 
-        a       -> b[5] -> e[1]
-        b       -> a[5] -> c[6]
-        c       -> b[6] -> d[5] -> e[3]
-        d       -> c[5]
-        e       -> a[1] -> c[3]
+        A       -> C[1] -> D[5] -> B[6]
+        B       -> E[3] -> C[5] -> A[6]
+        C       -> A[1] -> F[4] -> D[5] -> B[5] -> E[6]
+        D       -> F[2] -> C[5] -> A[5]
+        E       -> B[3] -> C[6] -> F[6]
+        F       -> D[2] -> C[4] -> E[6]
 
         ==========================================================
 
@@ -526,11 +625,46 @@ Enter another place ? (y/n)n
         (4)Kruskal's algorithm.
         (5)Exit.
         Enter your choice : 4
-        
-Min edge : 1 ae
-Min edge : 3 ce
-Min edge : 5 ab
-Min edge : 5 cd
+
+        PASS WISE DISPLAY :
+        A       -> C[1]
+
+
+        PASS WISE DISPLAY :
+        A       -> C[1]
+
+        D       -> F[2]
+
+
+        PASS WISE DISPLAY :
+        A       -> C[1]
+
+        D       -> F[2]
+
+        B       -> E[3]
+
+
+        PASS WISE DISPLAY :
+        A       -> C[1]
+
+        C       -> F[4]
+
+        D       -> F[2]
+
+        B       -> E[3]
+
+
+        PASS WISE DISPLAY :
+        A       -> C[1]
+
+        A       -> D[5]
+
+        C       -> F[4]
+
+        D       -> F[2]
+
+        B       -> E[3]
+
 
         ==========================================================
 
@@ -538,13 +672,15 @@ Min edge : 5 cd
 
         ==========================================================
 
-        a       -> e[1]
+        A       -> C[1]
 
-        a       -> b[5]
+        A       -> D[5]
 
-        c       -> e[3]
+        C       -> F[4]
 
-        c       -> d[5]
+        D       -> F[2]
+
+        B       -> E[3]
 
 
         ==========================================================
